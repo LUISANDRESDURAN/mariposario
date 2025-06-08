@@ -1,33 +1,44 @@
-// App.js
-import React from 'react'
-import { StyleSheet, Platform, StatusBar } from 'react-native'
-import {  SafeAreaView } from 'react-native-safe-area-context'
-import Header from './components/Header'
-import SearchBars from './components/SearchBar'
-import CardList from './components/CardList'
-import {mariposas} from './data/mariposas'
 
-export default function App () {
+import 'react-native-gesture-handler';
+import {  Dimensions } from 'react-native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import HomeScreens from './screens/HomeScreens';
+import SettingsScreen from './screens/settingsScreen';
+import CustomDrawerContent from './screens/CustomDrawerContent';
+
+const Drawer = createDrawerNavigator();
+
+export default function App() {
+  
+
   return (
-    <SafeAreaView
-      style={[
-        styles.container,
-        Platform.OS === 'android' && { paddingTop: StatusBar.currentHeight }
-      ]}
-      edges={['top', 'bottom']}
-    >
-      <Header />
-      <SearchBars />
-      <CardList data={mariposas} />
-    </SafeAreaView>
-  )
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Drawer.Navigator
+          initialRouteName="Mariposas"
+          screenOptions={{
+            headerShown: false,
+            drawerStyle: {
+              width: Dimensions.get('window').width * 0.8,
+            },
+          }}
+          drawerContent={(props) => (
+            <CustomDrawerContent
+              {...props}
+              
+              
+            />
+          )}
+        >
+          <Drawer.Screen name="Mariposas" component={HomeScreens} />
+          <Drawer.Screen name= "Configuracion" component={SettingsScreen}/>
+         
+        </Drawer.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
+  );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F8F8'
-  }
-})
-
 
