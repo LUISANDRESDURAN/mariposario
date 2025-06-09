@@ -1,22 +1,26 @@
-import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { useTheme } from '../screens/theme/ThemeContext';
 
-export default function Header () {
+export default function Header() {
+  const { theme } = useTheme();
   return (
-    <View style={styles.HeaderContainer}>
-      <Text style={styles.headerText}>Mariposas del Mariposario</Text>
+    <View style={[styles.container, {  borderBottomColor: theme.border }]}>
+      <Text style={[styles.text, { color: theme.text }]}>
+        Mariposas del Mariposario
+      </Text>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
-  HeaderContainer: {
+  container: {
+    padding: 16,
     alignItems: 'center',
-    borderBottomColor: '#EEE'
+    borderBottomWidth: 1,
   },
-  headerText: {
+  text: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333'
-  }
-})
+  },
+});

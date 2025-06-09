@@ -1,5 +1,6 @@
 import React from 'react'
-import { View, Text, StyleSheet, Image } from 'react-native'
+import { View, Text, Image, StyleSheet } from 'react-native'
+import { useTheme } from '../screens/theme/ThemeContext'
 
 export default function Card ({
   nombre,
@@ -8,45 +9,40 @@ export default function Card ({
   descripcion,
   imagen
 }) {
+  const { theme } = useTheme()
   return (
-    <View style={styles.CardContainer}>
-      <Image style={styles.image} source={{ uri: imagen }}></Image>
-      <View style ={styles.cardContent}>
-        <Text style={styles.cardTitle}>{nombre}</Text>
-        <Text style={styles.cardSubtitle}>{cientifico}</Text>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: theme.cardBackground, borderColor: theme.border }
+      ]}
+    >
+      <Image source={{ uri: imagen }} style={styles.image} />
+      <View style={styles.content}>
+        <Text style={[styles.title, { color: theme.text }]}>{nombre}</Text>
+        <Text style={[styles.subtitle, { color: theme.subtext }]}>
+          {cientifico}
+        </Text>
         <View style={styles.colorRow}>
           {colores.map((c, i) => (
-            <View key={i} style={[styles.color, { backgroundColor: c }]} />
+            <View key={i} style={[styles.dot, { backgroundColor: c }]} />
           ))}
         </View>
-        <Text numberOfLines={2} style ={styles.cardDescription}>{descripcion}</Text>
+        <Text numberOfLines={2} style={[styles.desc, { color: theme.text }]}>
+          {descripcion}
+        </Text>
       </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  CardContainer: {
+  container: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     marginVertical: 6,
-    elevation: 2,
-    overflow: 'hidden',
-  },
-  cardContent: {
-    flex: 1,
-    padding: 12
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#222'
-  },
-  cardSubtitle: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 6
+    borderWidth: 1,
+    overflow: 'hidden'
   },
   image: {
     width: 60,
@@ -55,21 +51,10 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     backgroundColor: '#EEE'
   },
-  colorRow: {
-    flexDirection: 'row',
-    marginBottom: 6
-  },
-  color: {
-    width: 12,
-    height: 12,
-    borderRadius: 12,
-    marginRight: 6,
-    
-    border: '1px solid #000'
-  },
-  cardDescription: {
-    paddingRight:18,
-    fontSize: 12,
-    color: '#444',
-  },
+  content: { flex: 1, padding: 12 },
+  title: { fontSize: 16, fontWeight: '600' },
+  subtitle: { fontSize: 12, marginBottom: 6 },
+  colorRow: { flexDirection: 'row', marginBottom: 6 },
+  dot: { width: 12, height: 12, borderRadius: 6, marginRight: 6 },
+  desc: { fontSize: 12 }
 })
