@@ -1,38 +1,67 @@
+// components/Card.jsx
 import React from 'react'
-import { View, Text, Image, StyleSheet } from 'react-native'
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity
+} from 'react-native'
 import { useTheme } from '../screens/theme/ThemeContext'
+import { useNavigation } from '@react-navigation/native'
 
 export default function Card ({
+  id,
   nombre,
   cientifico,
   colores,
   descripcion,
-  imagen
+  imagen,
+  lifespan,
+  stages,
+  hatchDate // opcional
 }) {
   const { theme } = useTheme()
+  const navigation = useNavigation()
+
+  const handlePress = () => {
+    navigation.navigate('Detail', {
+      id,
+      nombre,
+      cientifico,
+      imagen,
+      lifespan,
+      stages,
+      hatchDate
+    })
+    navigation.navigate('Detail', { id })
+  }
+
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: theme.cardBackground, borderColor: theme.border }
-      ]}
-    >
-      <Image source={{ uri: imagen }} style={styles.image} />
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: theme.text }]}>{nombre}</Text>
-        <Text style={[styles.subtitle, { color: theme.subtext }]}>
-          {cientifico}
-        </Text>
-        <View style={styles.colorRow}>
-          {colores.map((c, i) => (
-            <View key={i} style={[styles.dot, { backgroundColor: c }]} />
-          ))}
+    <TouchableOpacity onPress={handlePress}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: theme.cardBackground, borderColor: theme.border }
+        ]}
+      >
+        <Image source={{ uri: imagen }} style={styles.image} />
+        <View style={styles.content}>
+          <Text style={[styles.title, { color: theme.text }]}>{nombre}</Text>
+          <Text style={[styles.subtitle, { color: theme.subtext }]}>
+            {cientifico}
+          </Text>
+          <View style={styles.colorRow}>
+            {colores.map((c, i) => (
+              <View key={i} style={[styles.dot, { backgroundColor: c }]} />
+            ))}
+          </View>
+          <Text numberOfLines={2} style={[styles.desc, { color: theme.text }]}>
+            {descripcion}
+          </Text>
         </View>
-        <Text numberOfLines={2} style={[styles.desc, { color: theme.text }]}>
-          {descripcion}
-        </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   )
 }
 
