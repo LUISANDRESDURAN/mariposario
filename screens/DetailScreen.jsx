@@ -142,7 +142,10 @@ export default function DetailScreen() {
                 <TouchableOpacity
                   activeOpacity={0.9}
                   onPress={() => setModalVisible(true)}
-                  style={styles.stageImageWrapper}
+                  style={[
+                  styles.stageImageWrapper,
+                  { backgroundColor: theme.cardBackground }
+                  ]}
                 >
                   <Image source={{ uri: data.imagenes[etapa][0] }} style={styles.stageImageLarge} />
                   <Text style={{ marginTop: 10, fontWeight: 'bold', fontSize: 16, color: theme.text }}>{etapa.charAt(0).toUpperCase() + etapa.slice(1)}</Text>
@@ -333,7 +336,6 @@ const styles = StyleSheet.create({
     height: 220, // altura mayor para mejor visualización
     borderRadius: 0,
     overflow: 'hidden',
-    backgroundColor: '#f7f7f7',
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 2,
