@@ -70,6 +70,9 @@ export default function DetailScreen({ route }) {
   const etapas = data.imagenes ? Object.keys(data.imagenes) : [];
   const etapasConPlus = [...etapas, 'add'];
 
+
+  //distribucion: centroametricaEuropa
+  
   // Cambia etapa desde flechas
   const handlePrev = () => {
     if (stageIndex > 0) setStageIndex(stageIndex - 1);
@@ -91,6 +94,11 @@ export default function DetailScreen({ route }) {
       stageCarouselRef.current.scrollToIndex({ index: idx, animated: true });
     }
   };
+
+  let distribucionText = '';
+  if (Array.isArray(data.distribucion)) {
+    distribucionText = data.distribucion.join(', ');
+  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>      
@@ -129,7 +137,7 @@ export default function DetailScreen({ route }) {
           </View>
           <View style={styles.infoRow}>
             <Icon name="earth-outline" size={20} color={theme.subtext} style={{ marginRight: 8 }} />
-            <Text style={[styles.descriptionText, { color: theme.text }]}>{data.distribucion}</Text>
+            <Text style={[styles.descriptionText, { color: theme.text }]}>{distribucionText}</Text>
           </View>
           <View style={styles.infoRow}>
             <Icon name="leaf-outline" size={20} color={theme.subtext} style={{ marginRight: 8 }} />
