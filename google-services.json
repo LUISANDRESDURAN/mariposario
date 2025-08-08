@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "773358822731",
+    "project_id": "mariposario-app",
+    "storage_bucket": "mariposario-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:773358822731:android:c970dee3f169ee646c34ce",
+        "android_client_info": {
+          "package_name": "com.tuusuario.mariposario"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "773358822731-bj4mk6spk8mk5mavqsl5umj2haakhp83.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDLe3czVOplRlQ_cpa9lQk51ly2U5iB5Y8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "773358822731-bj4mk6spk8mk5mavqsl5umj2haakhp83.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

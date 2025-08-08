@@ -7,7 +7,7 @@ export default function Header() {
   return (
     <View style={[styles.container, {  borderBottomColor: theme.border }]}>
       <Text style={[styles.text, { color: theme.text }]}>
-        Mariposas del Mariposario
+        asdas del Mariposario
       </Text>
     </View>
   );

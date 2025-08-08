@@ -28,6 +28,11 @@ export default function CustomDrawerContent ({ navigation }) {
           labelStyle={{ color: theme.text }}
         />
         <DrawerItem
+          label='Agregar Mariposa'
+          onPress={() => navigation.navigate('Agregar Mariposa')}
+          labelStyle={{ color: theme.text }}
+        />
+        <DrawerItem
           label='Configuración'
           onPress={() => navigation.navigate('Configuración')}
           labelStyle={{ color: theme.text }}

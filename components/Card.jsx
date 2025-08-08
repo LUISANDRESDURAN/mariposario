@@ -25,16 +25,7 @@ export default function Card ({
   const navigation = useNavigation()
 
   const handlePress = () => {
-    navigation.navigate('Detail', {
-      id,
-      nombre,
-      cientifico,
-      imagen,
-      lifespan,
-      stages,
-      hatchDate
-    })
-    navigation.navigate('Detail', { id })
+    navigation.navigate('Detail', { id });
   }
 
   return (

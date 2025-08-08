@@ -41,6 +41,7 @@ function MainStackNavigator() {
   );
 }
 
+import AddMariposaScreen from './screens/AddMariposaScreen';
 function AppNavigator() {
   const { isDark } = useTheme();
   return (
@@ -55,10 +56,13 @@ function AppNavigator() {
         }}
         drawerContent={(props) => <CustomDrawerContent {...props} />}
       >
-        {/* El Drawer expone el Stack bajo el nombre "Mariposas" */}
         <Drawer.Screen
           name="Mariposas"
           component={MainStackNavigator}
+        />
+        <Drawer.Screen
+          name="Agregar Mariposa"
+          component={AddMariposaScreen}
         />
         <Drawer.Screen
           name="Configuración"

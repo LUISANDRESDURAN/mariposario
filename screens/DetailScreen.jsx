@@ -1,6 +1,6 @@
 
 // screens/DetailScreenCustom.jsx
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   View,
   Text,
@@ -13,15 +13,34 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Icon from 'react-native-vector-icons/Ionicons'
 import { useTheme } from './theme/ThemeContext'
-import { mariposas } from '../data/mariposas'
+import { db } from '../config/firebaseConfig'
+import { doc, getDoc } from 'firebase/firestore'
 
 const { width } = Dimensions.get('window')
 
+
 export default function DetailScreen({ route }) {
-  const { theme } = useTheme()
-  const { id } = route.params || {}
-  const item = mariposas.find(m => m.id === id)
-  if (!item) return null
+  const { theme } = useTheme();
+  const { id } = route.params || {};
+  const [item, setItem] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [favorite, setFavorite] = useState(false);
+  useEffect(() => {
+    async function fetchMariposa() {
+      if (!id) return;
+      const docRef = doc(db, 'mariposas', id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setItem({ id: docSnap.id, ...docSnap.data() });
+      }
+      setLoading(false);
+    }
+    fetchMariposa();
+  }, [id]);
+  const toggleFavorite = () => setFavorite(!favorite);
+
+  if (loading) return null;
+  if (!item) return null;
 
   const {
     nombre,
@@ -31,20 +50,16 @@ export default function DetailScreen({ route }) {
     stages = [],
     lifespan,
     hatchDate
-  } = item
+  } = item;
 
-  const [favorite, setFavorite] = useState(false)
-  const toggleFavorite = () => setFavorite(!favorite)
-
-  let daysRemaining = lifespan
+  let daysRemaining = lifespan;
   if (hatchDate) {
-    const hatch = new Date(hatchDate)
-    const diffMs = Date.now() - hatch.getTime()
-    const daysPassed = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-    daysRemaining = Math.max(lifespan - daysPassed, 0)
+    const hatch = new Date(hatchDate);
+    const diffMs = Date.now() - hatch.getTime();
+    const daysPassed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    daysRemaining = Math.max(lifespan - daysPassed, 0);
   }
-
-  const lifeProgress = (daysRemaining / lifespan) * 100
+  const lifeProgress = lifespan ? (daysRemaining / lifespan) * 100 : 0;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>      
@@ -75,14 +90,14 @@ export default function DetailScreen({ route }) {
         {/* Stages Buttons Section */}
         <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>        
           <Text style={[styles.stageTitle, { color: theme.primary }]}>Etapas</Text>
-          {stages.map((stage, i) => (
+          {Array.isArray(stages) && stages.length > 0 ? stages.map((stage, i) => (
             <TouchableOpacity
               key={i}
               style={[styles.stageButton, { borderColor: theme.primary }]}
             >               
               <Text style={[styles.stageText, { color: theme.primary }]}>{stage.name}</Text>
             </TouchableOpacity>
-          ))}
+          )) : <Text style={{ color: theme.subtext }}>No hay etapas registradas</Text>}
         </View>
 
         {/* Lifespan Progress Bar Section */}
@@ -97,7 +112,7 @@ export default function DetailScreen({ route }) {
             />
           </View>
           <Text style={[styles.progressLabel, { color: theme.text }]}>          
-            {daysRemaining} / {lifespan} días        
+            {daysRemaining} / {lifespan || 0} días        
           </Text>
         </View>
 

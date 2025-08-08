@@ -10,7 +10,7 @@ export default function CardList({ data }) {
       contentContainerStyle={[styles.list, { backgroundColor: theme.background }]}
       data={data}
       keyExtractor={item => item.id}
-      renderItem={({ item }) => <Card {...item} />}
+      renderItem={({ item }) => <Card id={item.id} nombre={item.nombre} cientifico={item.cientifico} colores={item.colores || []} descripcion={item.descripcion} imagen={item.imagen} />}
     />
   );
 }
