@@ -53,6 +53,21 @@ export default function DetailScreen() {
 
   // Etapas disponibles
   const etapas = Object.keys(data.imagenes);
+  const etapasConPlus = [...etapas, 'add'];
+
+  // Cambia etapa desde flechas
+  const handlePrev = () => {
+    if (stageIndex > 0) setStageIndex(stageIndex - 1);
+    if (stageCarouselRef.current) {
+      stageCarouselRef.current.scrollToIndex({ index: Math.max(stageIndex - 1, 0), animated: true });
+    }
+  };
+  const handleNext = () => {
+    if (stageIndex < etapasConPlus.length - 1) setStageIndex(stageIndex + 1);
+    if (stageCarouselRef.current) {
+      stageCarouselRef.current.scrollToIndex({ index: Math.min(stageIndex + 1, etapasConPlus.length - 1), animated: true });
+    }
+  };
 
   // Cambia etapa desde tab
   const handleTabPress = idx => {
@@ -103,77 +118,81 @@ export default function DetailScreen() {
 
         {/* Etapas de vida (Carrusel de etapas) */}
         <View style={[styles.stageCard, { backgroundColor: theme.cardBackground }]}>        
-          <Text style={[styles.stageTitle, { color: theme.text }]}>Etapas de vida</Text>
-          <View style={styles.stagesTabRow}>
-            {etapas.map((etapa, idx) => (
-              <TouchableOpacity
-                key={etapa}
-                style={[
-                  styles.stageTab,
-                  stageIndex === idx && styles.stageTabActive,
-                  { backgroundColor: stageIndex === idx ? '#f7c873' : theme.header, borderColor: stageIndex === idx ? '#f7c873' : theme.border }
-                ]}
-                onPress={() => handleTabPress(idx)}
-                activeOpacity={0.8}
-              >
-                <Icon name={
-                  etapa === 'adulto' ? 'bug-outline' :
-                  etapa === 'larva' ? 'leaf-outline' :
-                  etapa === 'crisalida' ? 'egg-outline' :
-                  'ellipse-outline'
-                } size={20} color={stageIndex === idx ? '#fff' : theme.text} style={{ marginBottom: 2 }} />
-                <Text style={{ color: stageIndex === idx ? '#fff' : theme.text, fontWeight: 'bold', fontSize: 14 }}>{etapa.charAt(0).toUpperCase() + etapa.slice(1)}</Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.stageNavRow}>
+            <TouchableOpacity onPress={handlePrev} disabled={stageIndex === 0} style={[styles.arrowBtn, stageIndex === 0 && styles.arrowBtnDisabled]}>
+              <Icon name="chevron-back" size={28} color={stageIndex === 0 ? theme.border : theme.text} />
+            </TouchableOpacity>
+            <View style={styles.stageLine} />
+            <View style={styles.stageNameBox}>
+              {stageIndex === etapasConPlus.length - 1 ? (
+                <TouchableOpacity style={styles.addStageBtn}>
+                  <Icon name="add" size={22} color={theme.text} />
+                  <Text style={[styles.addStageText, { color: theme.text }]}>añadir nueva etapa</Text>
+                </TouchableOpacity>
+              ) : (
+                <Text style={[styles.stageName, { color: theme.text }]}>{etapas[stageIndex].charAt(0).toUpperCase() + etapas[stageIndex].slice(1)}</Text>
+              )}
+            </View>
+            <View style={styles.stageLine} />
+            <TouchableOpacity onPress={handleNext} disabled={stageIndex === etapasConPlus.length - 1} style={[styles.arrowBtn, stageIndex === etapasConPlus.length - 1 && styles.arrowBtnDisabled]}>
+              <Icon name="chevron-forward" size={28} color={stageIndex === etapasConPlus.length - 1 ? theme.border : theme.text} />
+            </TouchableOpacity>
           </View>
           <RNView style={styles.stageCarouselArea}>
             <FlatList
               ref={stageCarouselRef}
-              data={etapas}
+              data={etapasConPlus}
               keyExtractor={etapa => etapa}
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               onMomentumScrollEnd={e => {
-                const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+                const idx = Math.round(e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - 32));
                 setStageIndex(idx);
               }}
-              renderItem={({ item: etapa }) => (
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={() => setModalVisible(true)}
-                  style={[
-                  styles.stageImageWrapper,
-                  { backgroundColor: theme.cardBackground }
-                  ]}
-                >
-                  <Image source={{ uri: data.imagenes[etapa][0] }} style={styles.stageImageLarge} />
-                  <Text style={{ marginTop: 10, fontWeight: 'bold', fontSize: 16, color: theme.text }}>{etapa.charAt(0).toUpperCase() + etapa.slice(1)}</Text>
-                </TouchableOpacity>
+              renderItem={({ item: etapa, index }) => (
+                etapa === 'add' ? (
+                  <View style={[styles.stageImageWrapper, { justifyContent: 'center', alignItems: 'center', backgroundColor: theme.cardBackground }]}> 
+                    <TouchableOpacity style={styles.addStageBtn}>
+                      <Icon name="add-circle-outline" size={48} color={theme.text} />
+                      <Text style={[styles.addStageText, { color: theme.text, fontSize: 18, marginTop: 8 }]}>añadir nueva etapa</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() => setModalVisible(true)}
+                    style={[styles.stageImageWrapper, { backgroundColor: theme.cardBackground }]}
+                  >
+                    <Image source={{ uri: data.imagenes[etapa][0] }} style={styles.stageImageLarge} />
+                    <Text style={{ marginTop: 10, fontWeight: 'bold', fontSize: 16, color: theme.text }}>{etapa.charAt(0).toUpperCase() + etapa.slice(1)}</Text>
+                  </TouchableOpacity>
+                )
               )}
               style={{ flexGrow: 0 }}
-              snapToInterval={SCREEN_WIDTH}
+              snapToInterval={SCREEN_WIDTH - 32}
               decelerationRate={0.95}
               contentContainerStyle={{ paddingHorizontal: 0 }}
               initialScrollIndex={stageIndex}
-              getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
+              getItemLayout={(_, index) => ({ length: SCREEN_WIDTH - 32, offset: (SCREEN_WIDTH - 32) * index, index })}
               extraData={stageIndex}
             />
             {/* Dots */}
             <View style={styles.dotsRow}>
-              {etapas.map((_, idx) => (
+              {etapasConPlus.map((_, idx) => (
                 <View key={idx} style={[styles.dot, stageIndex === idx && styles.dotActive]} />
               ))}
             </View>
             {/* Modal de imagen con zoom */}
-            <ImageViewing
-              images={[{ uri: data.imagenes[etapas[stageIndex]][0] }]
-              }
-              imageIndex={0}
-              visible={modalVisible}
-              onRequestClose={() => setModalVisible(false)}
-              backgroundColor="#000"
-            />
+            {stageIndex !== etapasConPlus.length - 1 && (
+              <ImageViewing
+                images={[{ uri: data.imagenes[etapas[stageIndex]][0] }]}
+                imageIndex={0}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+                backgroundColor="#000"
+              />
+            )}
           </RNView>
         </View>
 
@@ -311,7 +330,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   stageCard: {
-    marginHorizontal: 0,
+    marginHorizontal: 16, // igual que section
     marginTop: 32,
     borderRadius: 22,
     paddingVertical: 24,
@@ -324,6 +343,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  stageNavRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+    marginTop: 2,
+  },
+  arrowBtn: {
+    padding: 6,
+    borderRadius: 20,
+  },
+  arrowBtnDisabled: {
+    opacity: 0.3,
+  },
+  stageLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: '#e0e0e0',
+    marginHorizontal: 6,
+  },
+  stageNameBox: {
+    minWidth: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  stageName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+    textTransform: 'capitalize',
+  },
+  addStageBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: '#f7f7f7',
+  },
+  addStageText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
   stageCarouselArea: {
     width: '100%',
     alignItems: 'center',
@@ -332,8 +397,8 @@ const styles = StyleSheet.create({
     minHeight: 160,
   },
   stageImageWrapper: {
-    width: SCREEN_WIDTH,
-    height: 220, // altura mayor para mejor visualización
+    width: SCREEN_WIDTH - 32, // respeta margen horizontal
+    height: 220,
     borderRadius: 0,
     overflow: 'hidden',
     alignItems: 'center',
