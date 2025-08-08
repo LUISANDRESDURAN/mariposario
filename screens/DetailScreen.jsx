@@ -1,6 +1,6 @@
 
 // screens/DetailScreenCustom.jsx
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import {
   View,
   Text,
@@ -13,109 +13,108 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Icon from 'react-native-vector-icons/Ionicons'
 import { useTheme } from './theme/ThemeContext'
-import { db } from '../config/firebaseConfig'
-import { doc, getDoc } from 'firebase/firestore'
 
-const { width } = Dimensions.get('window')
-
-
-export default function DetailScreen({ route }) {
-  const { theme } = useTheme();
-  const { id } = route.params || {};
-  const [item, setItem] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [favorite, setFavorite] = useState(false);
-  useEffect(() => {
-    async function fetchMariposa() {
-      if (!id) return;
-      const docRef = doc(db, 'mariposas', id);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setItem({ id: docSnap.id, ...docSnap.data() });
-      }
-      setLoading(false);
-    }
-    fetchMariposa();
-  }, [id]);
-  const toggleFavorite = () => setFavorite(!favorite);
-
-  if (loading) return null;
-  if (!item) return null;
-
-  const {
-    nombre,
-    cientifico,
-    imagen,
-    descripcion,
-    stages = [],
-    lifespan,
-    hatchDate
-  } = item;
-
-  let daysRemaining = lifespan;
-  if (hatchDate) {
-    const hatch = new Date(hatchDate);
-    const diffMs = Date.now() - hatch.getTime();
-    const daysPassed = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    daysRemaining = Math.max(lifespan - daysPassed, 0);
+const mockData = {
+  nombre: 'Mariposa Monarca',
+  cientifico: 'Danaus plexippus',
+  descripcion: 'La mariposa monarca es famosa por su migración masiva desde Norteamérica hasta México.',
+  distribucion: 'América del Norte, Centroamérica',
+  dieta: 'Néctar de flores (adulto), hojas de asclepia (larva)',
+  colores: ['#FFA500', '#000000'],
+  imagenes: {
+    adulto: [
+      'https://firebasestorage.googleapis.com/v0/b/mariposario-app.firebasestorage.app/o/mariposas%2F1754612439533_Fhg.jpg?alt=media&token=1fe7be75-eeb5-42ae-b68d-e519d69c5587'
+    ],
+    larva: [
+      'https://firebasestorage.googleapis.com/v0/b/mariposario-app.firebasestorage.app/o/mariposas%2F1754612439533_Fhg.jpg?alt=media&token=1fe7be75-eeb5-42ae-b68d-e519d69c5587'
+    ],
+    crisalida: [
+      'https://firebasestorage.googleapis.com/v0/b/mariposario-app.firebasestorage.app/o/mariposas%2F1754612439533_Fhg.jpg?alt=media&token=1fe7be75-eeb5-42ae-b68d-e519d69c5587'
+    ],
+    huevo: [
+      'https://firebasestorage.googleapis.com/v0/b/mariposario-app.firebasestorage.app/o/mariposas%2F1754612439533_Fhg.jpg?alt=media&token=1fe7be75-eeb5-42ae-b68d-e519d69c5587'
+    ]
   }
-  const lifeProgress = lifespan ? (daysRemaining / lifespan) * 100 : 0;
+};
+
+
+
+export default function DetailScreen() {
+  const { theme } = useTheme();
+  const [favorite, setFavorite] = useState(false);
+  const [selectedStage, setSelectedStage] = useState('adulto');
+  const data = mockData;
+
+  // Etapas disponibles
+  const etapas = Object.keys(data.imagenes);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>      
       <ScrollView contentContainerStyle={styles.container}>
-
-        {/* Header Section */}
+        {/* Encabezado */}
         <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>        
+          <Image source={{ uri: data.imagenes.adulto[0] }} style={styles.imageLarge} />
           <View style={styles.headerText}>
-            <Text style={[styles.name, { color: theme.text }]}>{nombre}</Text>
-            <Text style={[styles.scientific, { color: theme.subtext }]}>{cientifico}</Text>
+            <Text style={[styles.name, { color: theme.text }]}>{data.nombre}</Text>
+            <Text style={[styles.scientific, { color: theme.subtext }]}>{data.cientifico}</Text>
           </View>
-          <TouchableOpacity onPress={toggleFavorite} style={styles.star}>
+          <TouchableOpacity onPress={() => setFavorite(f => !f)} style={styles.star}>
             <Icon
               name={favorite ? 'star' : 'star-outline'}
               size={28}
               color={favorite ? '#FFD700' : theme.subtext}
             />
           </TouchableOpacity>
-          <Image source={{ uri: imagen }} style={styles.image} />
         </View>
 
-        {/* Description Section */}
+        {/* Resumen */}
         <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>        
-          <Text style={[styles.sectionTitle, { color: theme.primary }]}>Especie</Text>
-          <Text style={[styles.descriptionText, { color: theme.text }]}>{descripcion}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.primary }]}>Descripción</Text>
+          <Text style={[styles.descriptionText, { color: theme.text }]}>{data.descripcion}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.primary, marginTop: 12 }]}>Distribución</Text>
+          <Text style={[styles.descriptionText, { color: theme.text }]}>{data.distribucion}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.primary, marginTop: 12 }]}>Dieta</Text>
+          <Text style={[styles.descriptionText, { color: theme.text }]}>{data.dieta}</Text>
         </View>
 
-        {/* Stages Buttons Section */}
+        {/* Etapas de vida (Tabs) */}
         <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>        
-          <Text style={[styles.stageTitle, { color: theme.primary }]}>Etapas</Text>
-          {Array.isArray(stages) && stages.length > 0 ? stages.map((stage, i) => (
-            <TouchableOpacity
-              key={i}
-              style={[styles.stageButton, { borderColor: theme.primary }]}
-            >               
-              <Text style={[styles.stageText, { color: theme.primary }]}>{stage.name}</Text>
-            </TouchableOpacity>
-          )) : <Text style={{ color: theme.subtext }}>No hay etapas registradas</Text>}
-        </View>
-
-        {/* Lifespan Progress Bar Section */}
-        <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>        
-          <Text style={[styles.sectionTitle, { color: theme.primary }]}>Vida (días)</Text>
-          <View style={styles.progressBarBackground}>
-            <View
-              style={[
-                styles.progressBarFill,
-                { width: `${lifeProgress}%`, backgroundColor: theme.primary }
-              ]}
-            />
+          <Text style={[styles.stageTitle, { color: theme.primary }]}>Etapas de vida</Text>
+          <View style={{ flexDirection: 'row', marginBottom: 12 }}>
+            {etapas.map(etapa => (
+              <TouchableOpacity
+                key={etapa}
+                style={{
+                  paddingVertical: 6,
+                  paddingHorizontal: 16,
+                  borderRadius: 16,
+                  backgroundColor: selectedStage === etapa ? theme.primary : theme.header,
+                  marginRight: 8
+                }}
+                onPress={() => setSelectedStage(etapa)}
+              >
+                <Text style={{ color: selectedStage === etapa ? '#fff' : theme.text, fontWeight: 'bold' }}>{etapa.charAt(0).toUpperCase() + etapa.slice(1)}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-          <Text style={[styles.progressLabel, { color: theme.text }]}>          
-            {daysRemaining} / {lifespan || 0} días        
-          </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexDirection: 'row' }}>
+            {data.imagenes[selectedStage].map((img, idx) => (
+              <Image key={idx} source={{ uri: img }} style={styles.stageImage} />
+            ))}
+          </ScrollView>
         </View>
 
+        {/* Galería de imágenes */}
+        <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>        
+          <Text style={[styles.sectionTitle, { color: theme.primary }]}>Galería</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            {etapas.flatMap(etapa =>
+              data.imagenes[etapa].map((img, idx) => (
+                <Image key={etapa + idx} source={{ uri: img }} style={styles.galleryImage} />
+              ))
+            )}
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   )
@@ -138,6 +137,9 @@ const styles = StyleSheet.create({
   scientific: { fontSize: 16, marginTop: 4 },
   star: { marginHorizontal: 8 },
   image: { width: 60, height: 60, borderRadius: 30 },
+  imageLarge: { width: 100, height: 100, borderRadius: 50, marginRight: 16, backgroundColor: '#EEE' },
+  stageImage: { width: 120, height: 90, borderRadius: 8, marginRight: 12, marginBottom: 8, backgroundColor: '#EEE' },
+  galleryImage: { width: 80, height: 60, borderRadius: 8, margin: 4, backgroundColor: '#EEE' },
 
   section: {
     marginHorizontal: 16,
