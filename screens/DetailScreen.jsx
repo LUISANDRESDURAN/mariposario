@@ -15,44 +15,59 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import Icon from 'react-native-vector-icons/Ionicons'
 import { useTheme } from './theme/ThemeContext'
 import ImageViewing from 'react-native-image-viewing';
+import { db } from '../config/firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-const mockData = {
-  nombre: 'Mariposa Monarca',
-  cientifico: 'Danaus plexippus',
-  descripcion: 'La mariposa monarca es famosa por su migración masiva desde Norteamérica hasta México.',
-  distribucion: 'América del Norte, Centroamérica',
-  dieta: 'Néctar de flores (adulto), hojas de asclepia (larva)',
-  colores: ['#FFA500', '#000000'],
-  imagenes: {
-    adulto: [
-      'https://firebasestorage.googleapis.com/v0/b/mariposario-app.firebasestorage.app/o/mariposas%2F1754612439533_Fhg.jpg?alt=media&token=1fe7be75-eeb5-42ae-b68d-e519d69c5587'
-    ],
-    larva: [
-      'https://firebasestorage.googleapis.com/v0/b/mariposario-app.firebasestorage.app/o/mariposas%2F1754612439533_Fhg.jpg?alt=media&token=1fe7be75-eeb5-42ae-b68d-e519d69c5587'
-    ],
-    crisalida: [
-      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSqCTwwD7g6CeLp6lT7JZoTvK9knRbRVAnKlw&s'
-    ],
-    huevo: [
-      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSqCTwwD7g6CeLp6lT7JZoTvK9knRbRVAnKlw&s'
-    ]
-  }
-};
-
-
-
-export default function DetailScreen() {
+export default function DetailScreen({ route }) {
   const { theme } = useTheme();
   const [favorite, setFavorite] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const stageCarouselRef = useRef(null);
-  const data = mockData;
 
-  // Etapas disponibles
-  const etapas = Object.keys(data.imagenes);
+  // Fetch mariposa por id
+  React.useEffect(() => {
+    const fetchMariposa = async () => {
+      if (route?.params?.id) {
+        setLoading(true);
+        try {
+          const docRef = doc(db, 'mariposas', route.params.id);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setData({ id: docSnap.id, ...docSnap.data() });
+          } else {
+            setData(null);
+          }
+        } catch (e) {
+          setData(null);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setData(mockData);
+        setLoading(false);
+      }
+    };
+    fetchMariposa();
+  }, [route?.params?.id]);
+
+  if (loading || !data) {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}> 
+        <Text style={{ color: theme.text, fontSize: 18 }}>Cargando...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // Imagen principal
+  const mainImage = data.imagen || null;
+
+  // Etapas disponibles (pueden venir de data.imagenes o estar vacías)
+  const etapas = data.imagenes ? Object.keys(data.imagenes) : [];
   const etapasConPlus = [...etapas, 'add'];
 
   // Cambia etapa desde flechas
@@ -82,7 +97,13 @@ export default function DetailScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         {/* Imagen destacada */}
         <View style={styles.topImageContainer}>
-          <Image source={{ uri: data.imagenes.adulto[0] }} style={styles.topImage} />
+          {mainImage ? (
+            <Image source={{ uri: mainImage }} style={styles.topImage} />
+          ) : (
+            <View style={[styles.topImage, { backgroundColor: '#EEE', alignItems: 'center', justifyContent: 'center' }]}>
+              <Icon name="image-outline" size={64} color={theme.border} />
+            </View>
+          )}
           {/* Tarjeta flotante mejorada */}
           <View style={[styles.floatingCard, { backgroundColor: theme.cardBackground + 'CC', shadowColor: theme.text }]}> 
             <View style={{ flex: 1 }}>
@@ -125,10 +146,11 @@ export default function DetailScreen() {
             <View style={styles.stageLine} />
             <View style={styles.stageNameBox}>
               {stageIndex === etapasConPlus.length - 1 ? (
-                <TouchableOpacity style={styles.addStageBtn}>
-                  <Icon name="add" size={22} color={theme.text} />
-                  <Text style={[styles.addStageText, { color: theme.text }]}>añadir nueva etapa</Text>
-                </TouchableOpacity>
+                // <TouchableOpacity style={styles.addStageBtn}>
+                //   <Icon name="add" size={22} color={theme.text} />
+                //   <Text style={[styles.addStageText, { color: theme.text }]}>añadir nueva etapa</Text>
+                // </TouchableOpacity>
+                null
               ) : (
                 <Text style={[styles.stageName, { color: theme.text }]}>{etapas[stageIndex].charAt(0).toUpperCase() + etapas[stageIndex].slice(1)}</Text>
               )}
@@ -155,7 +177,7 @@ export default function DetailScreen() {
                   <View style={[styles.stageImageWrapper, { justifyContent: 'center', alignItems: 'center', backgroundColor: theme.cardBackground }]}> 
                     <TouchableOpacity style={styles.addStageBtn}>
                       <Icon name="add-circle-outline" size={48} color={theme.text} />
-                      <Text style={[styles.addStageText, { color: theme.text, fontSize: 18, marginTop: 8 }]}>añadir nueva etapa</Text>
+                      <Text style={[styles.addStageText, { color: theme.text, fontSize: 18 }]}>añadir nueva etapa</Text>
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -406,7 +428,6 @@ const styles = StyleSheet.create({
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
     shadowRadius: 4,
   },
   stageImageLarge: {
