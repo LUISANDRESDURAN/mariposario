@@ -15,6 +15,18 @@ export default function AddMariposaScreen({ navigation }) {
   const [colores, setColores] = useState('');
   const [imagen, setImagen] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [distribucion, setDistribucion] = useState([]); // Multi-select
+  const [dieta, setDieta] = useState(''); // Opcional
+  // Opciones de distribución (puedes ajustar según tus necesidades)
+  const opcionesDistribucion = [
+    'América del Norte',
+    'Centroamérica',
+    'Sudamérica',
+    'Europa',
+    'África',
+    'Asia',
+    'Oceanía',
+  ];
   // Puedes agregar más campos según lo necesites
 
   // Selección de imagen
@@ -29,8 +41,9 @@ export default function AddMariposaScreen({ navigation }) {
       setImagen(result.assets[0].uri);
     }
   };
+
   const handleSubmit = async () => {
-    if (!nombre || !cientifico || !descripcion) {
+    if (!nombre || !cientifico || !descripcion || distribucion.length === 0 || !colores || !imagen) {
       alert('Por favor completa todos los campos obligatorios.');
       return;
     }
@@ -53,6 +66,8 @@ export default function AddMariposaScreen({ navigation }) {
         nombre,
         cientifico,
         descripcion,
+        distribucion,
+        dieta,
         colores: coloresArray,
         imagen: imageUrl,
         createdAt: new Date()
@@ -64,6 +79,8 @@ export default function AddMariposaScreen({ navigation }) {
       setDescripcion('');
       setColores('');
       setImagen('');
+      setDistribucion([]);
+      setDieta('');
     } catch (error) {
       alert('Error al guardar: ' + error.message);
     } finally {
@@ -116,11 +133,49 @@ export default function AddMariposaScreen({ navigation }) {
           <Text style={{ color: theme.text }}>Seleccionar imagen</Text>
         </TouchableOpacity>
       </View>
+      <Text style={[styles.label, { color: theme.text }]}>Distribución</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 }}>
+        {opcionesDistribucion.map((opcion) => (
+          <TouchableOpacity
+            key={opcion}
+            style={{
+              backgroundColor: distribucion.includes(opcion) ? theme.primary || '#007AFF' : theme.cardBackground,
+              borderColor: theme.border,
+              borderWidth: 1,
+              borderRadius: 16,
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              margin: 4,
+            }}
+            onPress={() => {
+              setDistribucion((prev) =>
+                prev.includes(opcion)
+                  ? prev.filter((d) => d !== opcion)
+                  : [...prev, opcion]
+              );
+            }}
+          >
+            <Text style={{ color: distribucion.includes(opcion) ? '#fff' : theme.text }}>{opcion}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <Text style={[styles.label, { color: theme.text }]}>Dieta (opcional)</Text>
+      <TextInput
+        style={[styles.input, { color: theme.text, borderColor: theme.border }]}
+        value={dieta}
+        onChangeText={setDieta}
+        placeholder="Ej: Néctar de flores, hojas de asclepia"
+        placeholderTextColor={theme.subtext}
+      />
       {uploading ? (
         <ActivityIndicator size="large" color={theme.primary || '#007AFF'} style={{ marginBottom: 16 }} />
       ) : null}
       {/* Aquí puedes agregar más campos para etapas, lifespan, etc. */}
       <Button title="Guardar Mariposa" onPress={handleSubmit} color={theme.primary || '#007AFF'} />
+      <View style={{ height: 40 }}> 
+        {/* Margen extra para evitar solapamiento con botones del sistema */}
+        <Text style={{ color: theme.text }}></Text>
+      </View>
     </ScrollView>
   );
 }

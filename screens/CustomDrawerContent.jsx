@@ -1,4 +1,3 @@
-import React from 'react'
 import { View, Text, Switch, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer'
@@ -24,7 +23,12 @@ export default function CustomDrawerContent ({ navigation }) {
       <DrawerContentScrollView>
         <DrawerItem
           label='Mariposas'
-          onPress={() => navigation.navigate('Mariposas')}
+          onPress={() => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Mariposas' }],
+            });
+          }}
           labelStyle={{ color: theme.text }}
         />
         <DrawerItem

@@ -1,4 +1,3 @@
-import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../screens/theme/ThemeContext';
 
@@ -7,7 +6,7 @@ export default function Header() {
   return (
     <View style={[styles.container, {  borderBottomColor: theme.border }]}>
       <Text style={[styles.text, { color: theme.text }]}>
-        asdas del Mariposario
+        Mariposas del Mariposario
       </Text>
     </View>
   );
