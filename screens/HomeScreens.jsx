@@ -10,6 +10,7 @@ import {
   Header,
   SearchBars
 } from '../components';
+import { Text } from "react-native";
 
 export default function HomeScreen() {
   const { theme } = useTheme();
@@ -45,7 +46,13 @@ export default function HomeScreen() {
         theme={theme}
       />
       <SearchBars />
-      {loading ? null : <CardList data={filteredMariposas} />}
+      {filter === "favorites" && !user ? (
+        <Text style={{ color: theme.text, textAlign: 'center', marginTop: 32, fontSize: 16, fontWeight: '500' }}>
+          Debes iniciar sesión para marcar y ver tus mariposas favoritas.
+        </Text>
+      ) : loading ? null : (
+        <CardList data={filteredMariposas} />
+      )}
     </SafeAreaView>
   );
 }

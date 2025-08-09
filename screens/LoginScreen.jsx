@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-nativ
 import { useTheme, AuthContext } from './theme/ThemeContext';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from '../config/firebaseConfig';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 export default function LoginScreen({ navigation }) {
   const { theme } = useTheme();
@@ -30,7 +30,6 @@ export default function LoginScreen({ navigation }) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         await updateProfile(user, { displayName: name });
-        setUser(user);
         // Guardar datos adicionales en Firestore
         await setDoc(doc(db, 'users', user.uid), {
           name,
@@ -39,6 +38,8 @@ export default function LoginScreen({ navigation }) {
           email,
           createdAt: new Date()
         });
+        // Obtener datos extra y setear en contexto
+        setUser({ ...user, displayName: name, email, username, career });
         alert('Registro exitoso. ¡Bienvenido!');
         setIsRegister(false);
       } catch (error) {
@@ -51,7 +52,17 @@ export default function LoginScreen({ navigation }) {
       }
       try {
         await signInWithEmailAndPassword(auth, email, password);
-        setUser(auth.currentUser);
+        // Obtener datos extra de Firestore
+        const user = auth.currentUser;
+        let extra = {};
+        try {
+          const userRef = doc(db, 'users', user.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            extra = userSnap.data();
+          }
+        } catch (e) {}
+        setUser({ ...user, ...extra });
         alert('Login exitoso');
         navigation.reset({ index: 0, routes: [{ name: 'Mariposas' }] });
       } catch (error) {
