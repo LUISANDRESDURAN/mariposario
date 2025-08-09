@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useTheme } from './theme/ThemeContext';
 import { db, storage } from '../config/firebaseConfig';
-import { collection, addDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -127,6 +127,17 @@ export default function AddMariposaScreen({ navigation, route }) {
     }
   };
 
+  const handleDelete = async () => {
+    if (!editId) return;
+    try {
+      await deleteDoc(doc(db, 'mariposas', editId));
+      alert('Mariposa eliminada exitosamente.');
+      if (navigation) navigation.goBack();
+    } catch (error) {
+      alert('Error al eliminar: ' + error.message);
+    }
+  };
+
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={{ padding: 20 }}>
@@ -211,6 +222,15 @@ export default function AddMariposaScreen({ navigation, route }) {
       ) : null}
       {/* Aquí puedes agregar más campos para etapas, lifespan, etc. */}
       <Button title="Guardar Mariposa" onPress={handleSubmit} color={theme.primary || '#007AFF'} />
+      {editId && (
+        <View style={{ marginTop: 12 }}>
+          <Button
+            title="Eliminar Mariposa"
+            color="#d00"
+            onPress={handleDelete}
+          />
+        </View>
+      )}
       <View style={{ height: 40 }}> 
         {/* Margen extra para evitar solapamiento con botones del sistema */}
         <Text style={{ color: theme.text }}></Text>
