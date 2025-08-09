@@ -1,38 +1,34 @@
-// screens/DetailScreenCustom.jsx
-import React, { useContext, useEffect, useState, useRef } from 'react'
-import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Dimensions,
-  FlatList,
-  View as RNView,
-  TextInput,
-  Alert
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import Icon from 'react-native-vector-icons/Ionicons'
 import { AuthContext, useTheme } from './theme/ThemeContext'
-import ImageViewing from 'react-native-image-viewing';
-import { db } from '../config/firebaseConfig';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { useContext, useState, useRef, useMemo } from 'react'
+import { useEtapasActions } from '../hooks/useEtapasActions';
+import { useEtapasMariposa } from '../hooks/useEtapasMariposa';
+import { useIsFavorite } from '../hooks/useIsFavorite';
 import { useMariposaDetail } from '../hooks/useMariposaDetail';
-import FloatingCard from '../components/DetailScreen/FloatingCard';
-import ResumenSection from '../components/DetailScreen/ResumenSection';
-import StageCarousel from '../components/DetailScreen/StageCarousel';
-import AddStageForm from '../components/DetailScreen/AddStageForm';
-import GallerySection from '../components/DetailScreen/GallerySection';
-import { addStageToMariposa, removeStageFromMariposa } from '../helpers/firestoreStages';
+import Icon from 'react-native-vector-icons/Ionicons'
+import {
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View as RNView,
+  View,
+} from 'react-native'
+import {
+  AddStageForm,
+  FloatingCard,
+  GallerySection,
+  ResumenSection,
+  StageCarousel,
+} from '../components';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function DetailScreen({ route, navigation }) {
   const { theme } = useTheme();
   const { user } = useContext(AuthContext);
-  const [favorite, setFavorite] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
   const [showAddStageForm, setShowAddStageForm] = useState(false);
@@ -42,92 +38,38 @@ export default function DetailScreen({ route, navigation }) {
 
   // Hook para cargar datos de mariposa
   const { data, loading, error, reload } = useMariposaDetail(route?.params?.id, typeof mockData !== 'undefined' ? mockData : undefined);
+  const favorite = useIsFavorite(user?.uid, route?.params?.id);
+  const mainImage = useMemo(() => data?.imagen || null, [data]);
+  const imagenesObj = useMemo(() => (
+    data && typeof data.imagenes === 'object' && data.imagenes !== null ? data.imagenes : {}
+  ), [data]);
+  const etapas = useMemo(() => Object.keys(imagenesObj), [imagenesObj]);
+  const etapasArrRaw = useMemo(() => Array.isArray(data?.etapas) ? data.etapas : [], [data]);
+  const { etapasArr, mostrarAddStage, etapasConPlus } = useEtapasMariposa(etapasArrRaw);
 
-  useEffect(() => {
-    if (!user || !route?.params?.id) {
-      setFavorite(false);
-      return;
-    }
-    const favRef = doc(db, 'users', user.uid, 'favorites', route.params.id);
-    const unsubscribe = onSnapshot(favRef, (docSnap) => {
-      setFavorite(docSnap.exists());
-    });
-    return unsubscribe;
-  }, [user, route?.params?.id]);
+  // Hook para acciones de etapas
+  const { handleSaveStage, handleDeleteStage } = useEtapasActions({
+    mariposaId: route?.params?.id,
+    etapasArr,
+    stageIndex,
+    newStage,
+    setShowAddStageForm,
+    setNewStage,
+    setEditingStageIndex,
+    reload,
+    editingStageIndex
+  });
 
+  // Mostrar loading o error antes de acceder a data
   if (loading || !data) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}> 
-        <Text style={{ color: theme.text, fontSize: 18 }}>Cargando...</Text>
+        <Text style={{ color: theme.text, fontSize: 18 }}>
+          {loading ? 'Cargando...' : 'No se encontraron datos de la mariposa.'}
+        </Text>
       </SafeAreaView>
     );
   }
-
-  // Imagen principal
-  const mainImage = data.imagen || null;
-
-  // Asegura que data.imagenes sea siempre un objeto
-  const imagenesObj = data && typeof data.imagenes === 'object' && data.imagenes !== null ? data.imagenes : {};
-  const etapas = Object.keys(imagenesObj);
-
-  // Etapas dinámicas (array de objetos)
-  const etapasArrRaw = Array.isArray(data.etapas) ? data.etapas : [];
-  // Ordenar etapas según el orden deseado
-  const ordenEtapas = ['mariposa', 'crisálida', 'larva', 'huevo'];
-  const etapasArr = [...etapasArrRaw].sort((a, b) => {
-    const idxA = ordenEtapas.indexOf((a.nombreEtapa || '').toLowerCase());
-    const idxB = ordenEtapas.indexOf((b.nombreEtapa || '').toLowerCase());
-    return idxA - idxB;
-  });
-  // Si ya hay 4 etapas, no mostrar el botón de añadir
-  const mostrarAddStage = etapasArr.length < 4;
-  const etapasConPlus = mostrarAddStage ? [...etapasArr, { add: true }] : etapasArr;
-
-  // Guardar nueva etapa o actualizar etapa existente en Firestore
-  const handleSaveStage = async () => {
-    try {
-      if (editingStageIndex !== null && etapasArr[editingStageIndex]) {
-        // Editando: eliminar la etapa original y agregar la nueva (actualizada)
-        await removeStageFromMariposa(route?.params?.id, etapasArr[editingStageIndex]);
-        await addStageToMariposa(route?.params?.id, newStage);
-        Alert.alert('Éxito', 'La etapa fue actualizada.');
-      } else {
-        // Agregando nueva etapa
-        await addStageToMariposa(route?.params?.id, newStage);
-        Alert.alert('Éxito', 'La nueva etapa fue agregada.');
-      }
-      setShowAddStageForm(false);
-      setNewStage({ nombreEtapa: '', descripcionEtapa: '', duracion: '', hospedador: '' });
-      setEditingStageIndex(null); // Salir de modo edición
-      reload();
-    } catch (err) {
-      Alert.alert('Error', 'No se pudo guardar la etapa.');
-    }
-  };
-
-  // Eliminar etapa de Firestore
-  const handleDeleteStage = async () => {
-    const etapaAEliminar = etapasArr[stageIndex];
-    if (!etapaAEliminar) return;
-    Alert.alert(
-      'Eliminar etapa',
-      '¿Estás seguro de que deseas eliminar esta etapa?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar', style: 'destructive', onPress: async () => {
-            try {
-              await removeStageFromMariposa(route?.params?.id, etapaAEliminar);
-              reload();
-              Alert.alert('Éxito', 'La etapa fue eliminada.');
-            } catch (err) {
-              Alert.alert('Error', 'No se pudo eliminar la etapa.');
-            }
-          }
-        }
-      ]
-    );
-  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>      
