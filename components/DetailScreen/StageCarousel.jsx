@@ -1,6 +1,6 @@
 // Componente StageCarousel para mostrar las etapas de vida y navegación
 import React from 'react';
-import { View, Text, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import ImageViewing from 'react-native-image-viewing';
 
@@ -73,6 +73,23 @@ export default function StageCarousel({
               </View>
             ) : (
               <View style={[styles.stageImageWrapper, { backgroundColor: theme.cardBackground, justifyContent: 'center', alignItems: 'center' }]}> 
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => etapa.imagen && setModalVisible(true)}
+                  style={{ marginBottom: 10 }}
+                >
+                  {etapa.imagen ? (
+                    <Image
+                      source={{ uri: etapa.imagen }}
+                      style={{ width: 180, height: 130, borderRadius: 12, backgroundColor: '#EEE' }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={{ width: 180, height: 130, borderRadius: 12, backgroundColor: '#EEE', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon name="image-outline" size={48} color={theme.border} />
+                    </View>
+                  )}
+                </TouchableOpacity>
                 <Text style={{ color: theme.text, fontSize: 14, marginBottom: 4 }}>{etapa.descripcionEtapa}</Text>
                 <Text style={{ color: theme.subtext, fontSize: 13, marginBottom: 2 }}>Duración: {etapa.duracion}</Text>
                 {etapa.hospedador ? <Text style={{ color: theme.subtext, fontSize: 13 }}>Hospedador: {etapa.hospedador}</Text> : null}
@@ -96,7 +113,7 @@ export default function StageCarousel({
         {/* Modal de imagen con zoom */}
         {stageIndex !== etapasConPlus.length - 1 && (
           <ImageViewing
-            images={imagenesObj[etapas[stageIndex]] ? [{ uri: imagenesObj[etapas[stageIndex]][0] }] : []}
+            images={etapasConPlus[stageIndex]?.imagen ? [{ uri: etapasConPlus[stageIndex].imagen }] : []}
             imageIndex={0}
             visible={modalVisible}
             onRequestClose={() => setModalVisible(false)}

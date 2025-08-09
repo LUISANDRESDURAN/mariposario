@@ -1,7 +1,8 @@
 // Componente AddStageForm para agregar una nueva etapa
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { Picker } from '@react-native-picker/picker';
 
 export default function AddStageForm({
   newStage,
@@ -30,31 +31,64 @@ export default function AddStageForm({
     }
   };
 
+  // Validación de campos obligatorios
+  const [errors, setErrors] = useState({});
+
+  const validate = () => {
+    const newErrors = {};
+    if (!newStage.nombreEtapa) newErrors.nombreEtapa = 'Este campo es obligatorio';
+    if (!newStage.descripcionEtapa) newErrors.descripcionEtapa = 'Este campo es obligatorio';
+    if (!newStage.duracion) newErrors.duracion = 'Este campo es obligatorio';
+    if (!newStage.imagen) newErrors.imagen = 'La imagen es obligatoria';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = () => {
+    if (validate()) {
+      onSave();
+    }
+  };
+
   return (
     <View style={[styles.section, { backgroundColor: theme.cardBackground, marginTop: 12 }]}> 
       <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>Nueva etapa</Text>
-      <TextInput
-        style={[styles.input, { color: theme.text, borderColor: theme.border }]}
-        placeholder="Nombre de la etapa"
-        placeholderTextColor={theme.subtext}
-        value={newStage.nombreEtapa}
-        onChangeText={t => setNewStage(s => ({ ...s, nombreEtapa: t }))}
-      />
+      {/* Dropdown para nombre de etapa */}
+      <View style={{ marginBottom: 12 }}>
+        <Text style={{ color: theme.text, marginBottom: 4 }}>Nombre de la etapa</Text>
+        <View style={{ borderWidth: 1, borderColor: theme.border, borderRadius: 8, overflow: 'hidden' }}>
+          <Picker
+            selectedValue={newStage.nombreEtapa}
+            onValueChange={t => { setNewStage(s => ({ ...s, nombreEtapa: t })); setErrors(e => ({ ...e, nombreEtapa: undefined })); }}
+            style={{ color: theme.text, backgroundColor: theme.cardBackground }}
+            dropdownIconColor={theme.text}
+          >
+            <Picker.Item label="Selecciona una etapa..." value="" color={theme.subtext} />
+            <Picker.Item label="Huevo" value="huevo" />
+            <Picker.Item label="Larva" value="larva" />
+            <Picker.Item label="Crisálida" value="crisálida" />
+            <Picker.Item label="Mariposa" value="mariposa" />
+          </Picker>
+        </View>
+        {errors.nombreEtapa && <Text style={{ color: 'red', marginTop: 2 }}>{errors.nombreEtapa}</Text>}
+      </View>
       <TextInput
         style={[styles.input, { color: theme.text, borderColor: theme.border }]}
         placeholder="Descripción de la etapa"
         placeholderTextColor={theme.subtext}
         value={newStage.descripcionEtapa}
-        onChangeText={t => setNewStage(s => ({ ...s, descripcionEtapa: t }))}
+        onChangeText={t => { setNewStage(s => ({ ...s, descripcionEtapa: t })); setErrors(e => ({ ...e, descripcionEtapa: undefined })); }}
         multiline
       />
+      {errors.descripcionEtapa && <Text style={{ color: 'red', marginBottom: 6 }}>{errors.descripcionEtapa}</Text>}
       <TextInput
         style={[styles.input, { color: theme.text, borderColor: theme.border }]}
         placeholder="Duración (ej: 3-5 días)"
         placeholderTextColor={theme.subtext}
         value={newStage.duracion}
-        onChangeText={t => setNewStage(s => ({ ...s, duracion: t }))}
+        onChangeText={t => { setNewStage(s => ({ ...s, duracion: t })); setErrors(e => ({ ...e, duracion: undefined })); }}
       />
+      {errors.duracion && <Text style={{ color: 'red', marginBottom: 6 }}>{errors.duracion}</Text>}
       <TextInput
         style={[styles.input, { color: theme.text, borderColor: theme.border }]}
         placeholder="Hospedador (opcional)"
@@ -71,12 +105,13 @@ export default function AddStageForm({
         <TouchableOpacity onPress={handleImagePick} style={{ backgroundColor: theme.primary || '#007AFF', padding: 8, borderRadius: 8 }}>
           <Text style={{ color: '#fff', fontWeight: 'bold' }}>{newStage.imagen ? 'Cambiar imagen' : 'Seleccionar imagen'}</Text>
         </TouchableOpacity>
+        {errors.imagen && <Text style={{ color: 'red', marginTop: 4 }}>{errors.imagen}</Text>}
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
         <TouchableOpacity onPress={() => setShowAddStageForm(false)} style={{ marginRight: 16 }}>
           <Text style={{ color: theme.subtext }}>Cancelar</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={onSave}>
+        <TouchableOpacity onPress={handleSave}>
           <Text style={{ color: theme.primary || '#007AFF', fontWeight: 'bold' }}>Guardar</Text>
         </TouchableOpacity>
       </View>

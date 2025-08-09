@@ -10,7 +10,8 @@ import {
   Dimensions,
   FlatList,
   View as RNView,
-  TextInput
+  TextInput,
+  Alert
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Icon from 'react-native-vector-icons/Ionicons'
@@ -24,6 +25,7 @@ import ResumenSection from '../components/DetailScreen/ResumenSection';
 import StageCarousel from '../components/DetailScreen/StageCarousel';
 import AddStageForm from '../components/DetailScreen/AddStageForm';
 import GallerySection from '../components/DetailScreen/GallerySection';
+import { addStageToMariposa } from '../helpers/firestoreStages';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -57,6 +59,19 @@ export default function DetailScreen({ route }) {
   // Etapas dinámicas (array de objetos)
   const etapasArr = Array.isArray(data.etapas) ? data.etapas : [];
   const etapasConPlus = [...etapasArr, { add: true }];
+
+  // Guardar nueva etapa en Firestore
+  const handleSaveStage = async () => {
+    try {
+      await addStageToMariposa(route?.params?.id, newStage);
+      setShowAddStageForm(false);
+      setNewStage({ nombreEtapa: '', descripcionEtapa: '', duracion: '', hospedador: '' });
+      reload();
+      Alert.alert('Éxito', 'La nueva etapa fue agregada.');
+    } catch (err) {
+      Alert.alert('Error', 'No se pudo guardar la etapa.');
+    }
+  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>      
@@ -113,7 +128,7 @@ export default function DetailScreen({ route }) {
             newStage={newStage}
             setNewStage={setNewStage}
             setShowAddStageForm={setShowAddStageForm}
-            onSave={() => {/* aquí irá la lógica de guardado */}}
+            onSave={handleSaveStage}
             theme={theme}
             styles={styles}
           />
