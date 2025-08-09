@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTheme, AuthContext } from './theme/ThemeContext';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { db } from '../config/firebaseConfig';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth, db } from '../config/firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
 
 export default function LoginScreen({ navigation }) {
@@ -17,7 +17,6 @@ export default function LoginScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSubmit = async () => {
-    const auth = getAuth();
     if (isRegister) {
       if (!email || !password || !name || !username || !confirmPassword) {
         alert('Por favor completa todos los campos obligatorios');

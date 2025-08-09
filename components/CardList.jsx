@@ -19,5 +19,6 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: 12,
     paddingBottom: 16,
+    height: '100%',
   },
 });

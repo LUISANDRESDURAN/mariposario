@@ -1,5 +1,5 @@
 // screens/DetailScreenCustom.jsx
-import React, { useState, useRef } from 'react'
+import React, { useContext, useEffect, useState, useRef } from 'react'
 import {
   View,
   Text,
@@ -15,10 +15,10 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Icon from 'react-native-vector-icons/Ionicons'
-import { useTheme } from './theme/ThemeContext'
+import { AuthContext, useTheme } from './theme/ThemeContext'
 import ImageViewing from 'react-native-image-viewing';
 import { db } from '../config/firebaseConfig';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { useMariposaDetail } from '../hooks/useMariposaDetail';
 import FloatingCard from '../components/DetailScreen/FloatingCard';
 import ResumenSection from '../components/DetailScreen/ResumenSection';
@@ -29,8 +29,9 @@ import { addStageToMariposa, removeStageFromMariposa } from '../helpers/firestor
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-export default function DetailScreen({ route, navigation }) { // <-- AÑADIR navigation aquí
+export default function DetailScreen({ route, navigation }) {
   const { theme } = useTheme();
+  const { user } = useContext(AuthContext);
   const [favorite, setFavorite] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
@@ -41,6 +42,18 @@ export default function DetailScreen({ route, navigation }) { // <-- AÑADIR nav
 
   // Hook para cargar datos de mariposa
   const { data, loading, error, reload } = useMariposaDetail(route?.params?.id, typeof mockData !== 'undefined' ? mockData : undefined);
+
+  useEffect(() => {
+    if (!user || !route?.params?.id) {
+      setFavorite(false);
+      return;
+    }
+    const favRef = doc(db, 'users', user.uid, 'favorites', route.params.id);
+    const unsubscribe = onSnapshot(favRef, (docSnap) => {
+      setFavorite(docSnap.exists());
+    });
+    return unsubscribe;
+  }, [user, route?.params?.id]);
 
   if (loading || !data) {
     return (
@@ -148,9 +161,10 @@ export default function DetailScreen({ route, navigation }) { // <-- AÑADIR nav
             nombre={data.nombre}
             cientifico={data.cientifico}
             favorite={favorite}
-            onToggleFavorite={() => setFavorite(f => !f)}
+            onToggleFavorite={null}
             theme={theme}
             styles={styles}
+            mariposaId={route?.params?.id}
           />
         </View>
 
