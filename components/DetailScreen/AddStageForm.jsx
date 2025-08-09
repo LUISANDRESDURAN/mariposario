@@ -10,7 +10,9 @@ export default function AddStageForm({
   setShowAddStageForm,
   onSave,
   theme,
-  styles
+  styles,
+  isEditMode,
+  etapasExistentes = [] // NUEVO: recibe las etapas ya existentes
 }) {
   // Manejo de imagen local (solo uri)
   const handleImagePick = async () => {
@@ -50,9 +52,30 @@ export default function AddStageForm({
     }
   };
 
+  // Opciones posibles
+  const opcionesEtapas = [
+    { label: 'Huevo', value: 'huevo' },
+    { label: 'Larva', value: 'larva' },
+    { label: 'Crisálida', value: 'crisálida' },
+    { label: 'Mariposa', value: 'mariposa' },
+  ];
+  // Filtrar opciones para que no se repitan, excepto si estamos editando esa misma etapa
+  const opcionesFiltradas = opcionesEtapas.filter(opt => {
+    if (isEditMode && newStage.nombreEtapa === opt.value) return true;
+    return !etapasExistentes.includes(opt.value);
+  });
+
   return (
-    <View style={[styles.section, { backgroundColor: theme.cardBackground, marginTop: 12 }]}> 
-      <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>Nueva etapa</Text>
+    <View style={[styles.section, { backgroundColor: theme.cardBackground, marginTop: 12, borderColor: isEditMode ? theme.primary : theme.border, borderWidth: isEditMode ? 2 : 1 }]}> 
+      <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 16, marginBottom: 8 }}>
+        {isEditMode ? 'Editar etapa' : 'Nueva etapa'}
+      </Text>
+      {/* Si está en modo edición, muestra un aviso visual */}
+      {isEditMode && (
+        <Text style={{ color: theme.primary || '#007AFF', marginBottom: 8, fontWeight: 'bold' }}>
+          Estás editando una etapa existente
+        </Text>
+      )}
       {/* Dropdown para nombre de etapa */}
       <View style={{ marginBottom: 12 }}>
         <Text style={{ color: theme.text, marginBottom: 4 }}>Nombre de la etapa</Text>
@@ -64,10 +87,9 @@ export default function AddStageForm({
             dropdownIconColor={theme.text}
           >
             <Picker.Item label="Selecciona una etapa..." value="" color={theme.subtext} />
-            <Picker.Item label="Huevo" value="huevo" />
-            <Picker.Item label="Larva" value="larva" />
-            <Picker.Item label="Crisálida" value="crisálida" />
-            <Picker.Item label="Mariposa" value="mariposa" />
+            {opcionesFiltradas.map(opt => (
+              <Picker.Item key={opt.value} label={opt.label} value={opt.value} />
+            ))}
           </Picker>
         </View>
         {errors.nombreEtapa && <Text style={{ color: 'red', marginTop: 2 }}>{errors.nombreEtapa}</Text>}

@@ -25,7 +25,7 @@ import ResumenSection from '../components/DetailScreen/ResumenSection';
 import StageCarousel from '../components/DetailScreen/StageCarousel';
 import AddStageForm from '../components/DetailScreen/AddStageForm';
 import GallerySection from '../components/DetailScreen/GallerySection';
-import { addStageToMariposa } from '../helpers/firestoreStages';
+import { addStageToMariposa, removeStageFromMariposa } from '../helpers/firestoreStages';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -36,6 +36,7 @@ export default function DetailScreen({ route }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [showAddStageForm, setShowAddStageForm] = useState(false);
   const [newStage, setNewStage] = useState({ nombreEtapa: '', descripcionEtapa: '', duracion: '', hospedador: '' });
+  const [editingStageIndex, setEditingStageIndex] = useState(null); // NUEVO: para saber si estamos editando
   const stageCarouselRef = useRef(null);
 
   // Hook para cargar datos de mariposa
@@ -57,20 +58,62 @@ export default function DetailScreen({ route }) {
   const etapas = Object.keys(imagenesObj);
 
   // Etapas dinámicas (array de objetos)
-  const etapasArr = Array.isArray(data.etapas) ? data.etapas : [];
-  const etapasConPlus = [...etapasArr, { add: true }];
+  const etapasArrRaw = Array.isArray(data.etapas) ? data.etapas : [];
+  // Ordenar etapas según el orden deseado
+  const ordenEtapas = ['mariposa', 'crisálida', 'larva', 'huevo'];
+  const etapasArr = [...etapasArrRaw].sort((a, b) => {
+    const idxA = ordenEtapas.indexOf((a.nombreEtapa || '').toLowerCase());
+    const idxB = ordenEtapas.indexOf((b.nombreEtapa || '').toLowerCase());
+    return idxA - idxB;
+  });
+  // Si ya hay 4 etapas, no mostrar el botón de añadir
+  const mostrarAddStage = etapasArr.length < 4;
+  const etapasConPlus = mostrarAddStage ? [...etapasArr, { add: true }] : etapasArr;
 
-  // Guardar nueva etapa en Firestore
+  // Guardar nueva etapa o actualizar etapa existente en Firestore
   const handleSaveStage = async () => {
     try {
-      await addStageToMariposa(route?.params?.id, newStage);
+      if (editingStageIndex !== null && etapasArr[editingStageIndex]) {
+        // Editando: eliminar la etapa original y agregar la nueva (actualizada)
+        await removeStageFromMariposa(route?.params?.id, etapasArr[editingStageIndex]);
+        await addStageToMariposa(route?.params?.id, newStage);
+        Alert.alert('Éxito', 'La etapa fue actualizada.');
+      } else {
+        // Agregando nueva etapa
+        await addStageToMariposa(route?.params?.id, newStage);
+        Alert.alert('Éxito', 'La nueva etapa fue agregada.');
+      }
       setShowAddStageForm(false);
       setNewStage({ nombreEtapa: '', descripcionEtapa: '', duracion: '', hospedador: '' });
+      setEditingStageIndex(null); // Salir de modo edición
       reload();
-      Alert.alert('Éxito', 'La nueva etapa fue agregada.');
     } catch (err) {
       Alert.alert('Error', 'No se pudo guardar la etapa.');
     }
+  };
+
+  // Eliminar etapa de Firestore
+  const handleDeleteStage = async () => {
+    const etapaAEliminar = etapasArr[stageIndex];
+    if (!etapaAEliminar) return;
+    Alert.alert(
+      'Eliminar etapa',
+      '¿Estás seguro de que deseas eliminar esta etapa?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar', style: 'destructive', onPress: async () => {
+            try {
+              await removeStageFromMariposa(route?.params?.id, etapaAEliminar);
+              reload();
+              Alert.alert('Éxito', 'La etapa fue eliminada.');
+            } catch (err) {
+              Alert.alert('Error', 'No se pudo eliminar la etapa.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -120,6 +163,12 @@ export default function DetailScreen({ route }) {
           imagenesObj={imagenesObj}
           modalVisible={modalVisible}
           setModalVisible={setModalVisible}
+          onDeleteStage={handleDeleteStage}
+          onEditStage={() => {
+            setShowAddStageForm(true);
+            setNewStage(etapasArr[stageIndex]);
+            setEditingStageIndex(stageIndex); // NUEVO: guardar el índice de la etapa a editar
+          }}
         /> 
 
         {/* Formulario para nueva etapa (en tarjeta separada) */}
@@ -131,6 +180,8 @@ export default function DetailScreen({ route }) {
             onSave={handleSaveStage}
             theme={theme}
             styles={styles}
+            isEditMode={editingStageIndex !== null}
+            etapasExistentes={etapasArr.map(e => (e.nombreEtapa || '').toLowerCase())} // PASA nombres ya usados
           />
         )}
 
@@ -332,7 +383,7 @@ const styles = StyleSheet.create({
   },
   stageImageWrapper: {
     width: SCREEN_WIDTH - 32, // respeta margen horizontal
-    height: 220,
+    height: 260,
     borderRadius: 0,
     overflow: 'hidden',
     alignItems: 'center',
