@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useTheme } from './theme/ThemeContext';
 import { db, storage } from '../config/firebaseConfig';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc, updateDoc } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-export default function AddMariposaScreen({ navigation }) {
+export default function AddMariposaScreen({ navigation, route }) {
   const { theme } = useTheme();
   // Estados para los campos del formulario
   const [nombre, setNombre] = useState('');
@@ -17,6 +17,7 @@ export default function AddMariposaScreen({ navigation }) {
   const [uploading, setUploading] = useState(false);
   const [distribucion, setDistribucion] = useState([]); // Multi-select
   const [dieta, setDieta] = useState(''); // Opcional
+  const [editId, setEditId] = useState(route?.params?.id || null); // NUEVO: id de edición
   // Opciones de distribución (puedes ajustar según tus necesidades)
   const opcionesDistribucion = [
     'América del Norte',
@@ -41,6 +42,31 @@ export default function AddMariposaScreen({ navigation }) {
       setImagen(result.assets[0].uri);
     }
   };
+
+  // Si hay id, cargar la data de la mariposa y llenar el formulario
+  useEffect(() => {
+    const fetchMariposa = async () => {
+      if (editId) {
+        try {
+          const docRef = doc(db, 'mariposas', editId);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const d = docSnap.data();
+            setNombre(d.nombre || '');
+            setCientifico(d.cientifico || '');
+            setDescripcion(d.descripcion || '');
+            setColores(Array.isArray(d.colores) ? d.colores.join(', ') : (d.colores || ''));
+            setImagen(d.imagen || '');
+            setDistribucion(Array.isArray(d.distribucion) ? d.distribucion : []);
+            setDieta(d.dieta || '');
+          }
+        } catch (e) {
+          alert('Error al cargar la mariposa: ' + e.message);
+        }
+      }
+    };
+    fetchMariposa();
+  }, [editId]);
 
   const handleSubmit = async () => {
     if (!nombre || !cientifico || !descripcion || distribucion.length === 0 || !colores || !imagen) {
@@ -70,17 +96,30 @@ export default function AddMariposaScreen({ navigation }) {
         dieta,
         colores: coloresArray,
         imagen: imageUrl,
-        createdAt: new Date()
+        updatedAt: new Date()
       };
-      await addDoc(collection(db, 'mariposas'), nuevaMariposa);
-      alert('¡Mariposa guardada exitosamente!');
-      setNombre('');
-      setCientifico('');
-      setDescripcion('');
-      setColores('');
-      setImagen('');
-      setDistribucion([]);
-      setDieta('');
+      if (editId) {
+        // Editar mariposa existente
+        const docRef = doc(db, 'mariposas', editId);
+        await updateDoc(docRef, nuevaMariposa);
+        alert('¡Mariposa actualizada exitosamente!');
+      } else {
+        // Crear nueva mariposa
+        nuevaMariposa.createdAt = new Date();
+        await addDoc(collection(db, 'mariposas'), nuevaMariposa);
+        alert('¡Mariposa guardada exitosamente!');
+      }
+      // ...resetear estados solo si no es edición
+      if (!editId) {
+        setNombre('');
+        setCientifico('');
+        setDescripcion('');
+        setColores('');
+        setImagen('');
+        setDistribucion([]);
+        setDieta('');
+      }
+      if (navigation) navigation.goBack();
     } catch (error) {
       alert('Error al guardar: ' + error.message);
     } finally {

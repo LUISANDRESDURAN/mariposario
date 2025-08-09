@@ -12,6 +12,8 @@ export default function StageCarousel({
   showAddStageForm,
   setShowAddStageForm,
   newStage,
+  setNewStage, // <-- AÑADIDO
+  setEditingStageIndex, // <-- AÑADIDO
   stageCarouselRef,
   theme,
   styles,
@@ -115,7 +117,17 @@ export default function StageCarousel({
               >
                 <TouchableOpacity
                   style={styles.addStageBtn}
-                  onPress={() => setShowAddStageForm(true)}
+                  onPress={() => {
+                    setNewStage({
+                      nombreEtapa: "",
+                      descripcionEtapa: "",
+                      duracion: "",
+                      hospedador: "",
+                      imagen: "",
+                    });
+                    setEditingStageIndex && setEditingStageIndex(null);
+                    setShowAddStageForm(true);
+                  }}
                 >
                   <Icon
                     name="add-circle-outline"

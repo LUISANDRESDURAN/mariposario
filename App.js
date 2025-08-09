@@ -61,8 +61,9 @@ function AppNavigator() {
           component={MainStackNavigator}
         />
         <Drawer.Screen
-          name="Agregar Mariposa"
+          name="AddMariposaScreen"
           component={AddMariposaScreen}
+          options={{ drawerLabel: 'Agregar Mariposa' }}
         />
         <Drawer.Screen
           name="Configuración"

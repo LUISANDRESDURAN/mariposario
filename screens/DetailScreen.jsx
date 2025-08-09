@@ -29,7 +29,7 @@ import { addStageToMariposa, removeStageFromMariposa } from '../helpers/firestor
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-export default function DetailScreen({ route }) {
+export default function DetailScreen({ route, navigation }) { // <-- AÑADIR navigation aquí
   const { theme } = useTheme();
   const [favorite, setFavorite] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
@@ -128,6 +128,21 @@ export default function DetailScreen({ route }) {
               <Icon name="image-outline" size={64} color={theme.border} />
             </View>
           )}
+          {/* Botón editar mariposa */}
+          <TouchableOpacity
+            style={{ position: 'absolute', top: 18, right: 18, backgroundColor: theme.primary || '#007AFF', borderRadius: 20, padding: 8, elevation: 3 }}
+            onPress={() => {
+              // Navegar a la pantalla de edición, pasando el id
+              if (route?.params?.id) {
+                // navigation está disponible por props
+                if (typeof navigation !== 'undefined') {
+                  navigation.navigate('AddMariposaScreen', { id: route.params.id });
+                }
+              }
+            }}
+          >
+            <Icon name="create-outline" size={22} color="#fff" />
+          </TouchableOpacity>
           {/* Tarjeta flotante mejorada */}
           <FloatingCard
             nombre={data.nombre}
@@ -157,6 +172,8 @@ export default function DetailScreen({ route }) {
           showAddStageForm={showAddStageForm}
           setShowAddStageForm={setShowAddStageForm}
           newStage={newStage}
+          setNewStage={setNewStage} // <-- PASAR PROP
+          setEditingStageIndex={setEditingStageIndex} // <-- PASAR PROP
           stageCarouselRef={stageCarouselRef}
           theme={theme}
           styles={styles}

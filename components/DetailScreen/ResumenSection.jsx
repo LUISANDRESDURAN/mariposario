@@ -13,14 +13,14 @@ export default function ResumenSection({ descripcion, distribucion, dieta, theme
   }
   return (
     <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>        
-      <Text style={[styles.sectionTitle, { color: theme.text }]}>Descripción</Text>
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>Informacion general</Text>
       <View style={styles.infoRow}>
         <Icon name="information-circle-outline" size={20} color={theme.subtext} style={{ marginRight: 8 }} />
-        <Text style={[styles.descriptionText, { color: theme.text }]}>{descripcion}</Text>
+        <Text style={[styles.descriptionText, { color: theme.text, flexShrink: 1, flexWrap: 'wrap' }]} numberOfLines={5} ellipsizeMode="tail">{descripcion}</Text>
       </View>
       <View style={styles.infoRow}>
         <Icon name="earth-outline" size={20} color={theme.subtext} style={{ marginRight: 8 }} />
-        <Text style={[styles.descriptionText, { color: theme.text }]}>{distribucionText}</Text>
+        <Text style={[styles.descriptionText, { color: theme.text, flexShrink: 1, flexWrap: 'wrap' }]}>{distribucionText}</Text>
       </View>
       <View style={styles.infoRow}>
         <Icon name="leaf-outline" size={20} color={theme.subtext} style={{ marginRight: 8 }} />
