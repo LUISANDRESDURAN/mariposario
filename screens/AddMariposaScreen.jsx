@@ -5,6 +5,7 @@ import { db, storage } from '../config/firebaseConfig';
 import { collection, addDoc, doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import * as ImagePicker from 'expo-image-picker';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import WheelColorPicker from 'react-native-wheel-color-picker';
 
 export default function AddMariposaScreen({ navigation, route }) {
   const { theme } = useTheme();
@@ -12,7 +13,6 @@ export default function AddMariposaScreen({ navigation, route }) {
   const [nombre, setNombre] = useState('');
   const [cientifico, setCientifico] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [colores, setColores] = useState('');
   const [imagen, setImagen] = useState('');
   const [uploading, setUploading] = useState(false);
   const [distribucion, setDistribucion] = useState([]); // Multi-select
@@ -28,7 +28,9 @@ export default function AddMariposaScreen({ navigation, route }) {
     'Asia',
     'Oceanía',
   ];
-  // Puedes agregar más campos según lo necesites
+  // Color picker visual
+  const [colorActual, setColorActual] = useState('#FFA500');
+  const [coloresArray, setColoresArray] = useState([]);
 
   // Selección de imagen
   const pickImage = async () => {
@@ -55,7 +57,12 @@ export default function AddMariposaScreen({ navigation, route }) {
             setNombre(d.nombre || '');
             setCientifico(d.cientifico || '');
             setDescripcion(d.descripcion || '');
-            setColores(Array.isArray(d.colores) ? d.colores.join(', ') : (d.colores || ''));
+            const colores = Array.isArray(d.colores) ? d.colores : (d.colores ? [d.colores] : []);
+            setColoresArray(colores);
+            // Seleccionar el primer color guardado si existe
+            if (colores.length > 0) {
+              setColorActual(colores[0]);
+            }
             setImagen(d.imagen || '');
             setDistribucion(Array.isArray(d.distribucion) ? d.distribucion : []);
             setDieta(d.dieta || '');
@@ -68,8 +75,18 @@ export default function AddMariposaScreen({ navigation, route }) {
     fetchMariposa();
   }, [editId]);
 
+  const handleAddColor = () => {
+    if (colorActual && !coloresArray.includes(colorActual)) {
+      setColoresArray([...coloresArray, colorActual]);
+    }
+  };
+
+  const handleRemoveColor = (color) => {
+    setColoresArray(coloresArray.filter(c => c !== color));
+  };
+
   const handleSubmit = async () => {
-    if (!nombre || !cientifico || !descripcion || distribucion.length === 0 || !colores || !imagen) {
+    if (!nombre || !cientifico || !descripcion || distribucion.length === 0 || coloresArray.length === 0 || !imagen) {
       alert('Por favor completa todos los campos obligatorios.');
       return;
     }
@@ -87,7 +104,6 @@ export default function AddMariposaScreen({ navigation, route }) {
       } else {
         imageUrl = imagen; // Si es un link externo
       }
-      const coloresArray = colores.split(',').map(c => c.trim()).filter(Boolean);
       const nuevaMariposa = {
         nombre,
         cientifico,
@@ -114,7 +130,7 @@ export default function AddMariposaScreen({ navigation, route }) {
         setNombre('');
         setCientifico('');
         setDescripcion('');
-        setColores('');
+        setColoresArray([]);
         setImagen('');
         setDistribucion([]);
         setDieta('');
@@ -166,14 +182,46 @@ export default function AddMariposaScreen({ navigation, route }) {
         placeholderTextColor={theme.subtext}
         multiline
       />
-      <Text style={[styles.label, { color: theme.text }]}>Colores (separados por coma)</Text>
-      <TextInput
-        style={[styles.input, { color: theme.text, borderColor: theme.border }]}
-        value={colores}
-        onChangeText={setColores}
-        placeholder="#FFA500, #000000"
-        placeholderTextColor={theme.subtext}
-      />
+      <Text style={[styles.label, { color: theme.text }]}>Colores</Text>
+      <View style={{ alignItems: 'center', marginBottom: 8 }}>
+        <WheelColorPicker
+          color={colorActual}
+          onColorChange={setColorActual}
+          thumbStyle={{ borderColor: theme.primary, borderWidth: 2 }}
+          wheelHidden={false}
+          style={{ width: 200, height: 200 }}
+          useNativeDriver={true}
+          sliderHidden={false}
+        />
+        <TouchableOpacity
+          onPress={handleAddColor}
+          style={{
+            marginTop: 90,
+            backgroundColor: 'gray',
+            paddingVertical: 10,
+            paddingHorizontal: 28,
+            borderRadius: 24,
+            borderWidth: 1,
+            borderColor: 'gray',
+            alignItems: 'center',
+            flexDirection: 'row',
+            gap: 8
+          }}
+        >
+          <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: colorActual, borderWidth: 1, borderColor: theme.text, marginRight: 8 }} />
+          <Text style={{ color: theme.buttonText || '#fff', fontWeight: 'bold', fontSize: 16 }}>Agregar color</Text>
+        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
+          {coloresArray.map((color, idx) => (
+            <TouchableOpacity key={color+idx} onPress={() => handleRemoveColor(color)} style={{ margin: 4 }}>
+              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: color, borderWidth: 2, borderColor: '#fff', justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ color: '#000', fontSize: 12 }}>✕</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Text style={{ color: theme.subtext, fontSize: 12, marginTop: 4 }}>Toca un color para eliminarlo</Text>
+      </View>
       <Text style={[styles.label, { color: theme.text }]}>Imagen</Text>
       <View style={{ alignItems: 'center', marginBottom: 16 }}>
         {imagen ? (
