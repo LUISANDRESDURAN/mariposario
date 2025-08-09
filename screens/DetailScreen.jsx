@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   Dimensions,
   FlatList,
-  View as RNView
+  View as RNView,
+  TextInput
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Icon from 'react-native-vector-icons/Ionicons'
@@ -17,6 +18,12 @@ import { useTheme } from './theme/ThemeContext'
 import ImageViewing from 'react-native-image-viewing';
 import { db } from '../config/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
+import { useMariposaDetail } from '../hooks/useMariposaDetail';
+import FloatingCard from '../components/DetailScreen/FloatingCard';
+import ResumenSection from '../components/DetailScreen/ResumenSection';
+import StageCarousel from '../components/DetailScreen/StageCarousel';
+import AddStageForm from '../components/DetailScreen/AddStageForm';
+import GallerySection from '../components/DetailScreen/GallerySection';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -25,35 +32,12 @@ export default function DetailScreen({ route }) {
   const [favorite, setFavorite] = useState(false);
   const [stageIndex, setStageIndex] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [showAddStageForm, setShowAddStageForm] = useState(false);
+  const [newStage, setNewStage] = useState({ nombreEtapa: '', descripcionEtapa: '', duracion: '', hospedador: '' });
   const stageCarouselRef = useRef(null);
 
-  // Fetch mariposa por id
-  React.useEffect(() => {
-    const fetchMariposa = async () => {
-      if (route?.params?.id) {
-        setLoading(true);
-        try {
-          const docRef = doc(db, 'mariposas', route.params.id);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            setData({ id: docSnap.id, ...docSnap.data() });
-          } else {
-            setData(null);
-          }
-        } catch (e) {
-          setData(null);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setData(mockData);
-        setLoading(false);
-      }
-    };
-    fetchMariposa();
-  }, [route?.params?.id]);
+  // Hook para cargar datos de mariposa
+  const { data, loading, error, reload } = useMariposaDetail(route?.params?.id, typeof mockData !== 'undefined' ? mockData : undefined);
 
   if (loading || !data) {
     return (
@@ -66,39 +50,13 @@ export default function DetailScreen({ route }) {
   // Imagen principal
   const mainImage = data.imagen || null;
 
-  // Etapas disponibles (pueden venir de data.imagenes o estar vacías)
-  const etapas = data.imagenes ? Object.keys(data.imagenes) : [];
-  const etapasConPlus = [...etapas, 'add'];
+  // Asegura que data.imagenes sea siempre un objeto
+  const imagenesObj = data && typeof data.imagenes === 'object' && data.imagenes !== null ? data.imagenes : {};
+  const etapas = Object.keys(imagenesObj);
 
-
-  //distribucion: centroametricaEuropa
-  
-  // Cambia etapa desde flechas
-  const handlePrev = () => {
-    if (stageIndex > 0) setStageIndex(stageIndex - 1);
-    if (stageCarouselRef.current) {
-      stageCarouselRef.current.scrollToIndex({ index: Math.max(stageIndex - 1, 0), animated: true });
-    }
-  };
-  const handleNext = () => {
-    if (stageIndex < etapasConPlus.length - 1) setStageIndex(stageIndex + 1);
-    if (stageCarouselRef.current) {
-      stageCarouselRef.current.scrollToIndex({ index: Math.min(stageIndex + 1, etapasConPlus.length - 1), animated: true });
-    }
-  };
-
-  // Cambia etapa desde tab
-  const handleTabPress = idx => {
-    setStageIndex(idx);
-    if (stageCarouselRef.current) {
-      stageCarouselRef.current.scrollToIndex({ index: idx, animated: true });
-    }
-  };
-
-  let distribucionText = '';
-  if (Array.isArray(data.distribucion)) {
-    distribucionText = data.distribucion.join(', ');
-  }
+  // Etapas dinámicas (array de objetos)
+  const etapasArr = Array.isArray(data.etapas) ? data.etapas : [];
+  const etapasConPlus = [...etapasArr, { add: true }];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>      
@@ -113,130 +71,61 @@ export default function DetailScreen({ route }) {
             </View>
           )}
           {/* Tarjeta flotante mejorada */}
-          <View style={[styles.floatingCard, { backgroundColor: theme.cardBackground + 'CC', shadowColor: theme.text }]}> 
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.name, { color: theme.text, textAlign: 'left', fontSize: 26, fontWeight: 'bold', marginBottom: 2 }]} numberOfLines={1}>{data.nombre}</Text>
-              <Text style={[styles.scientifico, { color: theme.subtext, fontStyle: 'italic', fontSize: 15 }]} numberOfLines={1}>{data.cientifico}</Text>
-            </View>
-            <TouchableOpacity onPress={() => setFavorite(f => !f)} style={styles.favoriteCircle}>
-              <Icon
-                name={favorite ? 'star' : 'star-outline'}
-                size={26}
-                color={favorite ? '#FFD700' : theme.subtext}
-              />
-            </TouchableOpacity>
-          </View>
+          <FloatingCard
+            nombre={data.nombre}
+            cientifico={data.cientifico}
+            favorite={favorite}
+            onToggleFavorite={() => setFavorite(f => !f)}
+            theme={theme}
+            styles={styles}
+          />
         </View>
 
         {/* Resumen con íconos */}
-        <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>        
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Descripción</Text>
-          <View style={styles.infoRow}>
-            <Icon name="information-circle-outline" size={20} color={theme.subtext} style={{ marginRight: 8 }} />
-            <Text style={[styles.descriptionText, { color: theme.text }]}>{data.descripcion}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Icon name="earth-outline" size={20} color={theme.subtext} style={{ marginRight: 8 }} />
-            <Text style={[styles.descriptionText, { color: theme.text }]}>{distribucionText}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Icon name="leaf-outline" size={20} color={theme.subtext} style={{ marginRight: 8 }} />
-            <Text style={[styles.descriptionText, { color: theme.text }]}>{data.dieta}</Text>
-          </View>
-        </View>
+        <ResumenSection
+          descripcion={data.descripcion}
+          distribucion={data.distribucion}
+          dieta={data.dieta}
+          theme={theme}
+          styles={styles}
+        />
 
         {/* Etapas de vida (Carrusel de etapas) */}
-        <View style={[styles.stageCard, { backgroundColor: theme.cardBackground }]}>        
-          <View style={styles.stageNavRow}>
-            <TouchableOpacity onPress={handlePrev} disabled={stageIndex === 0} style={[styles.arrowBtn, stageIndex === 0 && styles.arrowBtnDisabled]}>
-              <Icon name="chevron-back" size={28} color={stageIndex === 0 ? theme.border : theme.text} />
-            </TouchableOpacity>
-            <View style={styles.stageLine} />
-            <View style={styles.stageNameBox}>
-              {stageIndex === etapasConPlus.length - 1 ? (
-                // <TouchableOpacity style={styles.addStageBtn}>
-                //   <Icon name="add" size={22} color={theme.text} />
-                //   <Text style={[styles.addStageText, { color: theme.text }]}>añadir nueva etapa</Text>
-                // </TouchableOpacity>
-                null
-              ) : (
-                <Text style={[styles.stageName, { color: theme.text }]}>{etapas[stageIndex].charAt(0).toUpperCase() + etapas[stageIndex].slice(1)}</Text>
-              )}
-            </View>
-            <View style={styles.stageLine} />
-            <TouchableOpacity onPress={handleNext} disabled={stageIndex === etapasConPlus.length - 1} style={[styles.arrowBtn, stageIndex === etapasConPlus.length - 1 && styles.arrowBtnDisabled]}>
-              <Icon name="chevron-forward" size={28} color={stageIndex === etapasConPlus.length - 1 ? theme.border : theme.text} />
-            </TouchableOpacity>
-          </View>
-          <RNView style={styles.stageCarouselArea}>
-            <FlatList
-              ref={stageCarouselRef}
-              data={etapasConPlus}
-              keyExtractor={etapa => etapa}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={e => {
-                const idx = Math.round(e.nativeEvent.contentOffset.x / (SCREEN_WIDTH - 32));
-                setStageIndex(idx);
-              }}
-              renderItem={({ item: etapa, index }) => (
-                etapa === 'add' ? (
-                  <View style={[styles.stageImageWrapper, { justifyContent: 'center', alignItems: 'center', backgroundColor: theme.cardBackground }]}> 
-                    <TouchableOpacity style={styles.addStageBtn}>
-                      <Icon name="add-circle-outline" size={48} color={theme.text} />
-                      <Text style={[styles.addStageText, { color: theme.text, fontSize: 18 }]}>añadir nueva etapa</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    activeOpacity={0.9}
-                    onPress={() => setModalVisible(true)}
-                    style={[styles.stageImageWrapper, { backgroundColor: theme.cardBackground }]}
-                  >
-                    <Image source={{ uri: data.imagenes[etapa][0] }} style={styles.stageImageLarge} />
-                    <Text style={{ marginTop: 10, fontWeight: 'bold', fontSize: 16, color: theme.text }}>{etapa.charAt(0).toUpperCase() + etapa.slice(1)}</Text>
-                  </TouchableOpacity>
-                )
-              )}
-              style={{ flexGrow: 0 }}
-              snapToInterval={SCREEN_WIDTH - 32}
-              decelerationRate={0.95}
-              contentContainerStyle={{ paddingHorizontal: 0 }}
-              initialScrollIndex={stageIndex}
-              getItemLayout={(_, index) => ({ length: SCREEN_WIDTH - 32, offset: (SCREEN_WIDTH - 32) * index, index })}
-              extraData={stageIndex}
-            />
-            {/* Dots */}
-            <View style={styles.dotsRow}>
-              {etapasConPlus.map((_, idx) => (
-                <View key={idx} style={[styles.dot, stageIndex === idx && styles.dotActive]} />
-              ))}
-            </View>
-            {/* Modal de imagen con zoom */}
-            {stageIndex !== etapasConPlus.length - 1 && (
-              <ImageViewing
-                images={[{ uri: data.imagenes[etapas[stageIndex]][0] }]}
-                imageIndex={0}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
-                backgroundColor="#000"
-              />
-            )}
-          </RNView>
-        </View>
+        <StageCarousel
+          etapasConPlus={etapasConPlus}
+          etapas={etapas}
+          stageIndex={stageIndex}
+          setStageIndex={setStageIndex}
+          showAddStageForm={showAddStageForm}
+          setShowAddStageForm={setShowAddStageForm}
+          newStage={newStage}
+          stageCarouselRef={stageCarouselRef}
+          theme={theme}
+          styles={styles}
+          imagenesObj={imagenesObj}
+          modalVisible={modalVisible}
+          setModalVisible={setModalVisible}
+        /> 
+
+        {/* Formulario para nueva etapa (en tarjeta separada) */}
+        {showAddStageForm && (
+          <AddStageForm
+            newStage={newStage}
+            setNewStage={setNewStage}
+            setShowAddStageForm={setShowAddStageForm}
+            onSave={() => {/* aquí irá la lógica de guardado */}}
+            theme={theme}
+            styles={styles}
+          />
+        )}
 
         {/* Galería de imágenes */}
-        <View style={[styles.section, { backgroundColor: theme.cardBackground }]}>        
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>Galería</Text>
-          <View style={styles.galleryRow}>
-            {etapas.flatMap(etapa =>
-              data.imagenes[etapa].map((img, idx) => (
-                <Image key={etapa + idx} source={{ uri: img }} style={styles.galleryImage} />
-              ))
-            )}
-          </View>
-        </View>
+        <GallerySection
+          etapas={etapas}
+          imagenesObj={imagenesObj}
+          theme={theme}
+          styles={styles}
+        />
       </ScrollView>
     </SafeAreaView>
   )
@@ -412,7 +301,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 16,
-    backgroundColor: '#f7f7f7',
+    // backgroundColor: 'red',
   },
   addStageText: {
     fontSize: 16,
@@ -461,5 +350,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#f7c873',
     width: 16,
   },
+  input: {
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+  }
 })
 
