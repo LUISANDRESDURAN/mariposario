@@ -2,9 +2,13 @@ import { View, Text, Switch, StyleSheet } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer'
 import { useTheme } from './theme/ThemeContext'
+import { useContext } from 'react';
+import { AuthContext } from './theme/ThemeContext';
+import { getAuth, signOut } from 'firebase/auth';
 
 export default function CustomDrawerContent ({ navigation }) {
-  const { theme, isDark, setIsDark } = useTheme()
+  const { theme, isDark, setIsDark } = useTheme();
+  const { user } = useContext(AuthContext);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
@@ -15,9 +19,11 @@ export default function CustomDrawerContent ({ navigation }) {
         ]}
       >
         <View style={styles.avatar} />
-        <Text style={[styles.name, { color: theme.text }]}>Usuario Demo</Text>
+        <Text style={[styles.name, { color: theme.text }]}>
+          {user ? user.displayName || user.email : 'Usuario Demo'}
+        </Text>
         <Text style={[styles.email, { color: theme.subtext }]}>
-          usuario@ejemplo.com
+          {user ? user.email : 'usuario@ejemplo.com'}
         </Text>
       </View>
       <DrawerContentScrollView>
@@ -48,11 +54,23 @@ export default function CustomDrawerContent ({ navigation }) {
           <Switch value={isDark} onValueChange={setIsDark} />
         </View>
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
-        <DrawerItem
-          label='Cerrar sesión'
-          onPress={() => console.log('Cerrar sesión')}
-          labelStyle={{ color: '#d00' }}
-        />
+        {user && (
+          <DrawerItem
+            label='Cerrar sesión'
+            onPress={async () => {
+              const auth = getAuth();
+              await signOut(auth);
+            }}
+            labelStyle={{ color: '#d00' }}
+          />
+        )}
+        {!user && (
+          <DrawerItem
+            label='Iniciar sesion'
+            onPress={() => navigation.navigate('LoginScreen')}
+            labelStyle={{ color: '#d00' }}
+          />
+        )}
       </DrawerContentScrollView>
     </SafeAreaView>
   )

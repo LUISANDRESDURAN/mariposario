@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "appMobileUnet",
-    "slug": "appMobileUnet",
+    "name": "Mariposario del jardin botanico UNET",
+    "slug": "Mariposario UNET",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -25,6 +25,9 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-web-browser"
+    ]
   }
 }

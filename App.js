@@ -11,7 +11,7 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createStackNavigator } from '@react-navigation/stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { ThemeProvider } from './screens/theme/ThemeContext';
+import { ThemeProvider, AuthProvider } from './screens/theme/ThemeContext';
 import { useTheme } from './screens/theme/ThemeContext';
 import HomeScreen from './screens/HomeScreens';
 import SettingsScreen from './screens/settingsScreen';
@@ -69,6 +69,11 @@ function AppNavigator() {
           name="Configuración"
           component={SettingsScreen}
         />
+        <Drawer.Screen
+          name="LoginScreen"
+          component={require('./screens/LoginScreen').default}
+          options={{ drawerLabel: () => null, title: null, drawerItemStyle: { height: 0 } }}
+        />
       </Drawer.Navigator>
     </NavigationContainer>
   );
@@ -77,9 +82,11 @@ function AppNavigator() {
 export default function App() {
   return (
     <ThemeProvider>
-      <SafeAreaProvider>
-        <AppNavigator />
-      </SafeAreaProvider>
+      <AuthProvider>
+        <SafeAreaProvider>
+          <AppNavigator />
+        </SafeAreaProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

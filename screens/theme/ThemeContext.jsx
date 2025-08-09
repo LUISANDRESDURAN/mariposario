@@ -1,4 +1,6 @@
 import { createContext, useState, useContext } from 'react';
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import React, { useEffect } from 'react';
 
 
 const lightTheme = {
@@ -20,6 +22,7 @@ const darkTheme = {
 
 
 const ThemeContext = createContext();
+export const AuthContext = React.createContext();
 
 
 export function ThemeProvider({ children }) {
@@ -29,6 +32,23 @@ export function ThemeProvider({ children }) {
     <ThemeContext.Provider value={{ theme, isDark, setIsDark }}>
       {children}
     </ThemeContext.Provider>
+  );
+}
+
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+    });
+    return unsubscribe;
+  }, []);
+  return (
+    <AuthContext.Provider value={{ user, setUser }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 
